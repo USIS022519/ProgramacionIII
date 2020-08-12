@@ -49,8 +49,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="150dp"
         android:layout_marginTop="330dp"
-        android:onClick="procesar"
-        android:text="Procesar" />
+        android:text="Calcular" />
 
     <TextView
         android:id="@+id/lblRespuesta"
