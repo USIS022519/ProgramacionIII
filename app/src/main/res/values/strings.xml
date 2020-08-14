@@ -1,10 +1,10 @@
 <resources>
     <string name="app_name">Prueba</string>
-    <string-array name="operaciones">
-        <item>Seleccione un elemento</item>
-        <item>Suma</item>
-        <item>Resta</item>
-        <item>Multiplicacion</item>
-        <item>Division</item>
+    <string-array name="deptos">
+        <item>Seleccione un depto</item>
+        <item>Usulutan</item>
+        <item>San Miguel</item>
+        <item>La Union</item>
+        <item>Morazan</item>
     </string-array>
 </resources>
