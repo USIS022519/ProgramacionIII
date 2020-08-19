@@ -5,18 +5,15 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TabHost;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-    String [][] mun = {
-            {"Seleccione un depto"},
-            {"Usulutan","Santa Maria", "Santa Elena", "Jiquilisco"},
-            {"El Transito", "San Jorge", "San Rafael"},
-            {"SRL","La Union","Anamoros","El Carmen"},
-            {""}
-    };
+    //direcciones direccion = new direcciones();
+    direcciones_pais miDireccion = new direcciones_pais();
+
        @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,7 +31,7 @@ public class MainActivity extends Activity {
         spnDepto.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                @Override
                public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
-                    spnMun.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item,mun[position] ));
+                    spnMun.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item,miDireccion.obtenerMunicipio(position) ));
                    Toast.makeText(getApplicationContext(), "Indice: "+ position, Toast.LENGTH_LONG).show();
                }
 
@@ -43,5 +40,26 @@ public class MainActivity extends Activity {
 
                }
         });
+
+           Button btnObtenerPais = (Button)findViewById(R.id.btnObtenerPais);
+           btnObtenerPais.setOnClickListener(new View.OnClickListener() {
+               @Override
+               public void onClick(View view) {
+                   Spinner spnPaises = (Spinner)findViewById(R.id.spnPaises);
+                   spnPaises.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item,miDireccion.obtenerPaises()));
+               }
+           });
     }
 }
+/*class direcciones{
+    String [][] mun = {
+            {"Seleccione un depto"},
+            {"Usulutan","Santa Maria", "Santa Elena", "Jiquilisco"},
+            {"El Transito", "San Jorge", "San Rafael"},
+            {"SRL","La Union","Anamoros","El Carmen"},
+            {""}
+    };
+    String[] obtenerMun(int posicion){
+        return mun[posicion];
+    }
+}*/

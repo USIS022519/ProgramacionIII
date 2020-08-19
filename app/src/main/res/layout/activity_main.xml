@@ -27,6 +27,27 @@
                 android:layout_height="match_parent">
 
                 <RelativeLayout
+                    android:id="@+id/tabPais"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <Spinner
+                        android:id="@+id/spnPaises"
+                        android:layout_marginTop="80dp"
+                        android:layout_marginLeft="80dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                    <Button
+                        android:id="@+id/btnObtenerPais"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="120dp"
+                        android:layout_marginTop="180dp"
+                        android:text="Obtener Pais"/>
+                </RelativeLayout>
+
+                <RelativeLayout
                     android:id="@+id/tabDireccion"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -65,15 +86,6 @@
                         android:layout_marginTop="80dp"
                         android:layout_marginLeft="80dp" />
                 </RelativeLayout>
-
-                <RelativeLayout
-                    android:id="@+id/tabPais"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                </RelativeLayout>
-
 
             </FrameLayout>
         </LinearLayout>
