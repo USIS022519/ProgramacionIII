@@ -7,12 +7,12 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/lblSensorAcelerometro"
+        android:id="@+id/lblSensorLuz"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="40dp"
         android:layout_marginTop="100dp"
-        android:text="Sensor de Acelerometro"
+        android:text="Sensor de Luz"
         android:textColor="@color/colorPrimary"/>
 
 </RelativeLayout>

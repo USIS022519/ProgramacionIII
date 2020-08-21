@@ -37,23 +37,25 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
-        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         if(sensor==null){
             finish();
         }
-           final TextView lblSensorAcelerometro = (TextView)findViewById(R.id.lblSensorAcelerometro);
+           final TextView lblSensorLuz = (TextView)findViewById(R.id.lblSensorLuz);
            sensorEventListener = new SensorEventListener() {
                @Override
                public void onSensorChanged(SensorEvent sensorEvent) {
-                   double acelerometro = sensorEvent.values[0];
-                   if( acelerometro>=-9 && acelerometro<=0 ) {
-                       getWindow().getDecorView().setBackgroundColor(Color.RED);
-                   } else if( acelerometro>0 && acelerometro<=5){
-                       getWindow().getDecorView().setBackgroundColor(Color.YELLOW);
-                   } else if(acelerometro>5 && acelerometro<=10){
-                       getWindow().getDecorView().setBackgroundColor(Color.GREEN);
+                   double luz = sensorEvent.values[0];
+                    if(luz>=0 && luz<=15000){
+                        getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+                    }
+                   if(luz>=15000 && luz<=30000){
+                       getWindow().getDecorView().setBackgroundColor(Color.GRAY);
                    }
-                   lblSensorAcelerometro.setText("VALOR: " + acelerometro);
+                   if(luz>=30000 && luz<=50000){
+                       getWindow().getDecorView().setBackgroundColor(Color.WHITE);
+                   }
+                   lblSensorLuz.setText("VALOR: " + luz);
                }
                @Override
                public void onAccuracyChanged(Sensor sensor, int i) {
