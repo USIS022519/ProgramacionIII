@@ -37,24 +37,23 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
-        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         if(sensor==null){
             finish();
         }
-           final TextView lblSensorProximidad = (TextView)findViewById(R.id.lblSensorProximidad);
+           final TextView lblSensorAcelerometro = (TextView)findViewById(R.id.lblSensorAcelerometro);
            sensorEventListener = new SensorEventListener() {
                @Override
                public void onSensorChanged(SensorEvent sensorEvent) {
-                    if( sensorEvent.values[0]>=0 && sensorEvent.values[0]<=4 ){
-                        getWindow().getDecorView().setBackgroundColor(Color.RED);
-                        lblSensorProximidad.setText("LEJOS: "+ sensorEvent.values[0]);
-                    } else if(sensorEvent.values[0]>4 && sensorEvent.values[0]<=8 ){
-                        getWindow().getDecorView().setBackgroundColor(Color.YELLOW);
-                        lblSensorProximidad.setText("INTERMEDIO: "+ sensorEvent.values[0]);
-                    } else{
-                        getWindow().getDecorView().setBackgroundColor(Color.GREEN);
-                        lblSensorProximidad.setText("CERCA: "+ sensorEvent.values[0]);
-                    }
+                   double acelerometro = sensorEvent.values[0];
+                   if( acelerometro>=-9 && acelerometro<=0 ) {
+                       getWindow().getDecorView().setBackgroundColor(Color.RED);
+                   } else if( acelerometro>0 && acelerometro<=5){
+                       getWindow().getDecorView().setBackgroundColor(Color.YELLOW);
+                   } else if(acelerometro>5 && acelerometro<=10){
+                       getWindow().getDecorView().setBackgroundColor(Color.GREEN);
+                   }
+                   lblSensorAcelerometro.setText("VALOR: " + acelerometro);
                }
                @Override
                public void onAccuracyChanged(Sensor sensor, int i) {
