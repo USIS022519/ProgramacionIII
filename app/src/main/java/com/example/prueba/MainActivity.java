@@ -7,59 +7,48 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
-import android.widget.TabHost;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
     //direcciones direccion = new direcciones();
-    direcciones_pais miDireccion = new direcciones_pais();
+    conversores miConversor = new conversores();
+    Spinner spnDe, spnA;
 
        @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        TabHost tbhConversores = (TabHost)findViewById(R.id.tbhDirecciones);
-        tbhConversores.setup();
+        final Spinner spnTipo = (Spinner)findViewById(R.id.spnTipo);
+        spnDe = (Spinner)findViewById(R.id.spnDe);
+        spnA = (Spinner)findViewById(R.id.spna);
 
-        tbhConversores.addTab(tbhConversores.newTabSpec("Direccion").setContent(R.id.tabDireccion).setIndicator("DIRECCION", null));
-        tbhConversores.addTab(tbhConversores.newTabSpec("Pais").setContent(R.id.tabPais).setIndicator("PAIS", null));
+        spnTipo.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
+                spnDe.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item,miConversor.obtenerConversor(position) ));
+                spnA.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item,miConversor.obtenerConversor(position) ));
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
 
-        final Spinner spnMun = (Spinner)findViewById(R.id.spnMun);
-
-        Spinner spnDepto = (Spinner)findViewById(R.id.spnDepto);
-        spnDepto.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-               @Override
-               public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
-                    spnMun.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item,miDireccion.obtenerMunicipio(position) ));
-                   Toast.makeText(getApplicationContext(), "Indice: "+ position, Toast.LENGTH_LONG).show();
-               }
-
-               @Override
-               public void onNothingSelected(AdapterView<?> adapterView) {
-
-               }
+            }
         });
+        Button btnConvertir = (Button)findViewById(R.id.btnConvertir);
+        btnConvertir.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                TextView tempVal = (TextView)findViewById(R.id.txtcantidad);
+                double cantidad = Double.parseDouble(tempVal.getText().toString());
+                int d = spnDe.getSelectedItemPosition();
+                int a = spnA.getSelectedItemPosition();
+                int tipo = spnTipo.getSelectedItemPosition();
 
-           Button btnObtenerPais = (Button)findViewById(R.id.btnObtenerPais);
-           btnObtenerPais.setOnClickListener(new View.OnClickListener() {
-               @Override
-               public void onClick(View view) {
-                   Spinner spnPaises = (Spinner)findViewById(R.id.spnPaises);
-                   spnPaises.setAdapter(new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item,miDireccion.obtenerPaises()));
-               }
-           });
+                Double respuesta = miConversor.convertir(tipo,d,a,cantidad);
+                tempVal = (TextView)findViewById(R.id.lblrespuesta);
+                tempVal.setText("Respuesta: "+ respuesta);
+            }
+        });
     }
 }
-/*class direcciones{
-    String [][] mun = {
-            {"Seleccione un depto"},
-            {"Usulutan","Santa Maria", "Santa Elena", "Jiquilisco"},
-            {"El Transito", "San Jorge", "San Rafael"},
-            {"SRL","La Union","Anamoros","El Carmen"},
-            {""}
-    };
-    String[] obtenerMun(int posicion){
-        return mun[posicion];
-    }
-}*/
