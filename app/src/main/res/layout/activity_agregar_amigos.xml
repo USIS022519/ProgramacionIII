@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".agregarAmigos"
+    android:padding="10dp">
+
+    <EditText
+        android:id="@+id/txtNombreAmigo"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginTop="30dp"
+        android:hint="Nombre"/>
+    <EditText
+        android:id="@+id/txtTelefonoAmigo"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginTop="100dp"
+        android:hint="Telefono"/>
+    <EditText
+        android:id="@+id/txtDireccionAmigo"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginTop="170dp"
+        android:hint="Direccion donde vives"/>
+    <EditText
+        android:id="@+id/txtEmailAmigo"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginTop="245dp"
+        android:hint="Email"/>
+    <Button
+        android:id="@+id/btnGuardarAmigos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="320dp"
+        android:text="Guardar Amigos"/>
+    <Button
+        android:id="@+id/btnMostrarAmigos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="370dp"
+        android:text="Mostrar Amigos"/>
+
+</RelativeLayout>

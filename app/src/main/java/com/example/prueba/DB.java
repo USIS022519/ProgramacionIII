@@ -1,6 +1,7 @@
 package com.example.prueba;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -21,12 +22,16 @@ public class DB extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
 
     }
-    public void mantenimientoAmigos(String accion){
+    public Cursor mantenimientoAmigos(String accion, String[] data){
+        SQLiteDatabase sqLiteDatabaseReadable=getReadableDatabase();
+        SQLiteDatabase sqLiteDatabaseWritable=getWritableDatabase();
+        Cursor cursor = null;
         switch (accion){
             case "consultar":
-
+                cursor=sqLiteDatabaseReadable.rawQuery("SELECT * FROM amigos ORDER BY nombre ASC", null);
                 break;
             case "nuevo":
+                sqLiteDatabaseWritable.execSQL("INSERT INTO amigos (nombre,telefono,direccion,email) VALUES('"+ data[1] +"','"+data[2]+"','"+data[3]+"','"+data[4]+"')");
                 break;
 
             case "modificar":
@@ -38,6 +43,6 @@ public class DB extends SQLiteOpenHelper {
             default:
                 break;
         }
-
+        return cursor;
     }
 }
