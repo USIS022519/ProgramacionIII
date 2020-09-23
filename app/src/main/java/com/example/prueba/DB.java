@@ -33,14 +33,11 @@ public class DB extends SQLiteOpenHelper {
             case "nuevo":
                 sqLiteDatabaseWritable.execSQL("INSERT INTO amigos (nombre,telefono,direccion,email) VALUES('"+ data[1] +"','"+data[2]+"','"+data[3]+"','"+data[4]+"')");
                 break;
-
             case "modificar":
+                sqLiteDatabaseWritable.execSQL("UPDATE amigos SET nombre='"+ data[1] +"',telefono='"+data[2]+"',direccion='"+data[3]+"',email='"+data[4]+"' WHERE idAmigo='"+data[0]+"'");
                 break;
-
             case "eliminar":
-                break;
-
-            default:
+                sqLiteDatabaseWritable.execSQL("DELETE FROM amigos WHERE idAmigo='"+ data[0] +"'");
                 break;
         }
         return cursor;

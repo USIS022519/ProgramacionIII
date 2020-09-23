@@ -19,8 +19,8 @@ public class agregarAmigos extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_agregar_amigos);
 
-        Button btnGuardarAmigos = (Button)findViewById(R.id.btnGuardarAmigos);
-        btnGuardarAmigos.setOnClickListener(new View.OnClickListener() {
+        Button btnAmigos = (Button)findViewById(R.id.btnGuardarAmigos);
+        btnAmigos.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 TextView tempVal = (TextView)findViewById(R.id.txtNombreAmigo);
@@ -41,11 +41,21 @@ public class agregarAmigos extends AppCompatActivity {
                 miDB.mantenimientoAmigos(accion, data);
 
                 Toast.makeText(getApplicationContext(),"Registro de amigo insertado con exito", Toast.LENGTH_LONG).show();
-                Intent mostrarAmigos = new Intent(agregarAmigos.this, MainActivity.class);
-                startActivity(mostrarAmigos);
+                mostrarListaAmigos();
+            }
+        });
+        btnAmigos = (Button)findViewById(R.id.btnMostrarAmigos);
+        btnAmigos.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mostrarListaAmigos();
             }
         });
         mostrarDatosAmigo();
+    }
+    void mostrarListaAmigos(){
+        Intent mostrarAmigos = new Intent(agregarAmigos.this, MainActivity.class);
+        startActivity(mostrarAmigos);
     }
     void mostrarDatosAmigo(){
         try {
