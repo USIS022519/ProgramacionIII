@@ -7,41 +7,48 @@
     tools:context=".agregarAmigos"
     android:padding="10dp">
 
+    <ImageView
+        android:id="@+id/imgFotoAmigo"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="150dp"
+        />
     <EditText
         android:id="@+id/txtNombreAmigo"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="130dp"
         android:hint="Nombre"/>
     <EditText
         android:id="@+id/txtTelefonoAmigo"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="200dp"
         android:hint="Telefono"/>
     <EditText
         android:id="@+id/txtDireccionAmigo"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:layout_marginTop="170dp"
+        android:layout_marginTop="270dp"
         android:hint="Direccion donde vives"/>
     <EditText
         android:id="@+id/txtEmailAmigo"
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:layout_marginTop="245dp"
+        android:layout_marginTop="345dp"
         android:hint="Email"/>
     <Button
         android:id="@+id/btnGuardarAmigos"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="320dp"
+        android:layout_marginTop="420dp"
         android:text="Guardar Amigos"/>
     <Button
         android:id="@+id/btnMostrarAmigos"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="370dp"
+        android:layout_marginTop="470dp"
         android:text="Mostrar Amigos"/>
 
 </RelativeLayout>

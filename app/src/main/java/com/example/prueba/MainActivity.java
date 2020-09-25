@@ -32,13 +32,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
-
+//https://developer.android.com/training/camera/photobasics?hl=es-419#java
 public class MainActivity extends AppCompatActivity {
     DB miBD;
     Cursor misAmigos;
-    ArrayList<String> stringArrayList = new ArrayList<String>();
-    ArrayList<String> copyStringArrayList = new ArrayList<String>();
-    ArrayAdapter<String> stringArrayAdapter;
+    amigos amigo;
+    ArrayList<amigos> stringArrayList = new ArrayList<amigos>();
+    ArrayList<amigos> copyStringArrayList = new ArrayList<amigos>();
+    ListView ltsAmigos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,17 +76,23 @@ public class MainActivity extends AppCompatActivity {
             }
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                stringArrayList.clear();
-                if( tempVal.getText().toString().trim().length()<1 ){//no hay texto para buscar
-                    stringArrayList.addAll(copyStringArrayList);
-                } else{//hacemos la busqueda
-                    for (String amigo : copyStringArrayList){
-                        if(amigo.toLowerCase().contains(tempVal.getText().toString().trim().toLowerCase())){
-                            stringArrayList.add(amigo);
+                try {
+                    stringArrayList.clear();
+                    if (tempVal.getText().toString().trim().length() < 1) {//no hay texto para buscar
+                        stringArrayList.addAll(copyStringArrayList);
+                    } else {//hacemos la busqueda
+                        for (amigos am : copyStringArrayList) {
+                            String nombre = am.getNombre();
+                            if (nombre.toLowerCase().contains(tempVal.getText().toString().trim().toLowerCase())) {
+                                stringArrayList.add(am);
+                            }
                         }
                     }
+                    adaptadorImagenes adaptadorImg = new adaptadorImagenes(getApplicationContext(), stringArrayList);
+                    ltsAmigos.setAdapter(adaptadorImg);
+                }catch (Exception ex){
+                    Toast.makeText(getApplicationContext(), "Error: "+ ex.getMessage(), Toast.LENGTH_LONG).show();
                 }
-                stringArrayAdapter.notifyDataSetChanged();
             }
             @Override
             public void afterTextChanged(Editable editable) {
@@ -107,7 +114,8 @@ public class MainActivity extends AppCompatActivity {
                         misAmigos.getString(1),//nombre
                         misAmigos.getString(2),//telefono
                         misAmigos.getString(3),//direccion
-                        misAmigos.getString(4) //email
+                        misAmigos.getString(4), //email
+                        misAmigos.getString(5)  //urlImg
                 };
                 agregarAmigo("modificar",dataAmigo);
                 return true;
@@ -163,17 +171,81 @@ public class MainActivity extends AppCompatActivity {
     }
     void mostrarDatosAmigos(){
         stringArrayList.clear();
-        ListView ltsAmigos = (ListView)findViewById(R.id.ltsAmigos);
-        stringArrayAdapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, stringArrayList);
-        ltsAmigos.setAdapter(stringArrayAdapter);
+        ltsAmigos = (ListView)findViewById(R.id.ltsAmigos);
         do {
-            stringArrayList.add(misAmigos.getString(1));
+            amigo = new amigos(misAmigos.getString(0),misAmigos.getString(1), misAmigos.getString(2), misAmigos.getString(3), misAmigos.getString(4), misAmigos.getString(5));
+            stringArrayList.add(amigo);
         }while(misAmigos.moveToNext());
+        adaptadorImagenes adaptadorImg = new adaptadorImagenes(getApplicationContext(), stringArrayList);
+        ltsAmigos.setAdapter(adaptadorImg);
 
         copyStringArrayList.clear();//limpiamos la lista de amigos
         copyStringArrayList.addAll(stringArrayList);//creamos la copia de la lista de amigos...
-
-        stringArrayAdapter.notifyDataSetChanged();
         registerForContextMenu(ltsAmigos);
      }
+}
+class amigos{
+    String id;
+    String nombre;
+    String telefono;
+    String direccion;
+    String email;
+    String urlImg;
+
+    public amigos(String id, String nombre, String telefono, String direccion, String email, String urlImg) {
+        this.id = id;
+        this.nombre = nombre;
+        this.telefono = telefono;
+        this.direccion = direccion;
+        this.email = email;
+        this.urlImg = urlImg;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
+    }
+
+    public String getDireccion() {
+        return direccion;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getUrlImg() {
+        return urlImg;
+    }
+
+    public void setUrlImg(String urlImg) {
+        this.urlImg = urlImg;
+    }
 }
