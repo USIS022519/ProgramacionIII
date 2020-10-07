@@ -1,6 +1,7 @@
 package com.example.prueba;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.net.wifi.aware.PublishConfig;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -12,6 +13,8 @@ import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,6 +40,14 @@ public class MainActivity extends Activity {
 
         obtenerDatosAmigos objObtenerAmigos = new obtenerDatosAmigos();
         objObtenerAmigos.execute();
+
+        FloatingActionButton btnAgregarNuevoAmigos = findViewById(R.id.btnAgregarAmigos);
+        btnAgregarNuevoAmigos.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                agregarNuevosAmigos();
+            }
+        });
     }
     private class obtenerDatosAmigos extends AsyncTask<Void,Void, String> {
         HttpURLConnection urlConnection;
@@ -45,7 +56,7 @@ public class MainActivity extends Activity {
         protected String doInBackground(Void... voids) {
             StringBuilder result = new StringBuilder();
             try {
-                URL url = new URL("Http://10.0.2.2:5984/db_agenda/_design/agenda/_view/mi-agenda");
+                URL url = new URL("Http://192.168.1.15:5984/db_agenda/_design/agenda/_view/mi-agenda");
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
 
@@ -88,5 +99,9 @@ public class MainActivity extends Activity {
         }catch (Exception ex){
             Toast.makeText(MainActivity.this, "Error al mostrar los datos: " + ex.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+    private void agregarNuevosAmigos(){
+        Intent nuevoAmigo = new Intent(MainActivity.this, agregar_amigos.class);
+        startActivity(nuevoAmigo);
     }
 }
