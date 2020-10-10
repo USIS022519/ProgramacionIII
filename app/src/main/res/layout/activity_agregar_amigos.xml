@@ -35,15 +35,15 @@
         android:id="@+id/txtDuiAmigo"
         android:layout_marginTop="300dp"
         android:layout_width="match_parent"
-        android:hint="CODIGO"
+        android:hint="DUI"
         android:layout_height="wrap_content"/>
-    <com.google.android.material.button.MaterialButton
+    <Button
         android:id="@+id/btnGuardarAmigos"
-        android:layout_marginTop="380dp"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="140dp"
-        android:background="@android:drawable/ic_menu_save"/>
+        android:layout_marginTop="360dp"
+        android:text="Guardar"/>
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnMostrarAmigos"
         android:src="@android:drawable/ic_menu_revert"
