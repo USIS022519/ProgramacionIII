@@ -43,20 +43,31 @@ public class MainActivity extends Activity {
     ArrayList<String> arrayList =new ArrayList<String>();
     ArrayList<String> copyStringArrayList = new ArrayList<String>();
     ArrayAdapter<String> stringArrayAdapter;
+    utilidadesComunes uc;
+    detectarInternet di;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        obtenerDatosAmigos objObtenerAmigos = new obtenerDatosAmigos();
-        objObtenerAmigos.execute();
+        di = new detectarInternet(getApplicationContext());
+        if( di.hayConexionInternet() ) {
+            conexionServidor objObtenerAmigos = new conexionServidor();
+            objObtenerAmigos.execute(uc.url_consulta, "GET");
+        } else {
+            Toast.makeText(getApplicationContext(), "No hay conexion a internet.", Toast.LENGTH_LONG).show();
+        }
 
         FloatingActionButton btnAgregarNuevoAmigos = findViewById(R.id.btnAgregarAmigos);
         btnAgregarNuevoAmigos.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                agregarNuevosAmigos("nuevo", jsonObject);
+                if(di.hayConexionInternet()) {
+                    agregarNuevosAmigos("nuevo", jsonObject);
+                } else {
+                    Toast.makeText(getApplicationContext(), "No hay conexion a internet.", Toast.LENGTH_LONG).show();
+                }
             }
         });
         buscarAmigos();
@@ -116,49 +127,12 @@ public class MainActivity extends Activity {
                 return true;
 
             case R.id.mnxEliminarAmigo:
-
                 AlertDialog eliminarFriend =  eliminarAmigo();
                 eliminarFriend.show();
                 return true;
 
             default:
                 return super.onContextItemSelected(item);
-        }
-    }
-
-    private class obtenerDatosAmigos extends AsyncTask<Void,Void, String> {
-        HttpURLConnection urlConnection;
-
-        @Override
-        protected String doInBackground(Void... voids) {
-            StringBuilder result = new StringBuilder();
-            try {
-                URL url = new URL("Http://192.168.1.7:5984/db_agenda/_design/agenda/_view/mi-agenda");
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("GET");
-
-                InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                String linea;
-                while ((linea = reader.readLine()) != null) {
-                    result.append(linea);
-                }
-            } catch (Exception ex) {
-                //
-            }
-            return result.toString();
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            try {
-                jsonObject = new JSONObject(s);
-                datosJSON = jsonObject.getJSONArray("rows");
-                mostrarDatosAmigos();
-            } catch (Exception ex) {
-                Toast.makeText(MainActivity.this, "Error la parsear los datos: " + ex.getMessage(), Toast.LENGTH_LONG).show();
-            }
         }
     }
     private void mostrarDatosAmigos(){
@@ -201,11 +175,15 @@ public class MainActivity extends Activity {
             confirmacion.setPositiveButton("Si", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
+                    try {
+                        conexionServidor objEliminarAmigo = new conexionServidor();
+                        objEliminarAmigo.execute(uc.url_mto +
+                                datosJSON.getJSONObject(posicion).getJSONObject("value").getString("_id") + "?rev=" +
+                                datosJSON.getJSONObject(posicion).getJSONObject("value").getString("_rev"), "DELETE");
 
-                    eliminarDatosAmigo objEliminarAmigo = new eliminarDatosAmigo();
-                    objEliminarAmigo.execute();
-
-                    Toast.makeText(getApplicationContext(), "Amigo eliminado con exito.", Toast.LENGTH_SHORT).show();
+                    }catch (Exception ex){
+                        Toast.makeText(getApplicationContext(), "Error al intentar eliminar el amigo: "+ ex.getMessage() , Toast.LENGTH_LONG).show();
+                    }
                     dialogInterface.dismiss();
                 }
             });
@@ -221,54 +199,50 @@ public class MainActivity extends Activity {
         }
         return confirmacion.create();
     }
-    private class eliminarDatosAmigo extends AsyncTask<String,String, String> {
+    private class conexionServidor extends AsyncTask<String,String, String> {
         HttpURLConnection urlConnection;
 
         @Override
         protected String doInBackground(String... parametros) {
-            StringBuilder stringBuilder = new StringBuilder();
-            String jsonResponse = null;
+            StringBuilder result = new StringBuilder();
             try {
-                URL url = new URL("http://192.168.1.7:5984/db_agenda/" +
-                        datosJSON.getJSONObject(posicion).getJSONObject("value").getString("_id") + "?rev=" +
-                        datosJSON.getJSONObject(posicion).getJSONObject("value").getString("_rev"));
+                String uri = parametros[0];
+                String metodo = parametros[1];
 
+                URL url = new URL(uri);
                 urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("DELETE");
+                urlConnection.setRequestMethod(metodo);
 
                 InputStream in = new BufferedInputStream(urlConnection.getInputStream());
                 BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-
-                String inputLine;
-                StringBuffer stringBuffer = new StringBuffer();
-                while ((inputLine = reader.readLine()) != null) {
-                    stringBuffer.append(inputLine + "\n");
+                String linea;
+                while ((linea = reader.readLine()) != null) {
+                    result.append(linea);
                 }
-                if (stringBuffer.length() == 0) {
-                    return null;
-                }
-                jsonResponse = stringBuffer.toString();
-                return jsonResponse;
             } catch (Exception ex) {
                 //
             }
-            return null;
+            return result.toString();
         }
 
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
             try {
-                JSONObject jsonObject = new JSONObject(s);
-                if (jsonObject.getBoolean("ok")) {
-                    Toast.makeText(getApplicationContext(), "Datos de amigo guardado con exito", Toast.LENGTH_SHORT).show();
-                    obtenerDatosAmigos objObtenerAmigos = new obtenerDatosAmigos();
-                    objObtenerAmigos.execute();
-                } else {
-                    Toast.makeText(getApplicationContext(), "Error al intentar guardar datos de amigo", Toast.LENGTH_SHORT).show();
+                jsonObject = new JSONObject(s);
+                if(jsonObject.isNull("rows")) {
+                    if(jsonObject.getBoolean("ok")){
+                        Toast.makeText(MainActivity.this, "Amigo eliminado con exito", Toast.LENGTH_SHORT).show();
+                        datosJSON.remove(posicion);
+                    } else{
+                        Toast.makeText(MainActivity.this, "Error no se pudo eliminar el registro de amigo", Toast.LENGTH_SHORT).show();
+                    }
+                } else{
+                    datosJSON = jsonObject.getJSONArray("rows");
                 }
-            } catch (Exception e) {
-                Toast.makeText(getApplicationContext(), "Error al guardar amigo: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                mostrarDatosAmigos();
+            } catch (Exception ex) {
+                Toast.makeText(MainActivity.this, "Error la parsear los datos: " + ex.getMessage(), Toast.LENGTH_LONG).show();
             }
         }
     }

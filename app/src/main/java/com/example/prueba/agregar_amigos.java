@@ -27,6 +27,7 @@ import java.net.URL;
 
 public class agregar_amigos extends AppCompatActivity {
     String resp, accion, id, rev;
+    utilidadesComunes uc;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -128,7 +129,7 @@ public class agregar_amigos extends AppCompatActivity {
             String jsonDatos = parametros[0];
             BufferedReader reader;
             try {
-                URL url = new URL("http://192.168.1.7:5984/db_agenda/");
+                URL url = new URL(uc.url_mto);
                 urlConnection = (HttpURLConnection)url.openConnection();
                 urlConnection.setDoInput(true);
                 urlConnection.setDoOutput(true);
