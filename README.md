@@ -8,6 +8,7 @@ Codigos de Ejmplo de la catedra de Programacion Computacional III
 * WebServices
 * Notificaciones PUSH
 * Uso de Sensores, multimedia
+* Chats de usuarios
 * Menus 
 * Creativad e innovacion.
 
