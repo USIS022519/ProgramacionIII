@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "510479719133",
+    "firebase_url": "https://ugb2019-ad7a2.firebaseio.com",
+    "project_id": "ugb2019-ad7a2",
+    "storage_bucket": "ugb2019-ad7a2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:510479719133:android:cbe22e42c73e09aad11934",
+        "android_client_info": {
+          "package_name": "com.example.prueba"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "510479719133-hmg0viqtf3hsld6mhmhns15kcgu9196s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxcN-RstezAcihkOTGJmJsUPAuYeN8EHA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "510479719133-hmg0viqtf3hsld6mhmhns15kcgu9196s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:510479719133:android:da2476a1aae47d35d11934",
+        "android_client_info": {
+          "package_name": "com.ugb.mensajeria"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "510479719133-hmg0viqtf3hsld6mhmhns15kcgu9196s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxcN-RstezAcihkOTGJmJsUPAuYeN8EHA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "510479719133-hmg0viqtf3hsld6mhmhns15kcgu9196s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
