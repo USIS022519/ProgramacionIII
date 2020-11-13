@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        imgFoto = findViewById(R.id.imgFoto);
         tomarFoto();
         try {
             final String miToken = myFirebaseInstanceIdService.miToken;
@@ -58,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
                         TextView tempVal = findViewById(R.id.txtNombre);
                         String nombre = tempVal.getText().toString(),
                                 id = mDatabse.push().getKey();
-                        usuarios user = new usuarios(nombre, "luishernandez@ugb.edu.sv", "", miToken);
+                        usuarios user = new usuarios(nombre, "luishernandez@ugb.edu.sv", urlCompletaImg, miToken);
                         if (id != null) {
                             mDatabse.child(id).setValue(user).addOnSuccessListener(new OnSuccessListener<Void>() {
                                 @Override

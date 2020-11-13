@@ -4,19 +4,27 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent" android:layout_margin="10dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/crvFoto"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="center"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="10dp"
+        app:cardCornerRadius="150dp">
     <ImageView
         android:id="@+id/imgFoto"
-        android:layout_marginTop="60dp"
-        android:layout_centerHorizontal="true"
-        android:src="@drawable/camera"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:src="@drawable/camera"/>
 
+    </androidx.cardview.widget.CardView>
     <EditText
         android:id="@+id/txtNombre"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/imgFoto"
+        android:layout_below="@+id/crvFoto"
         android:hint="Nombre Completo"
         android:layout_marginTop="60dp" />
 

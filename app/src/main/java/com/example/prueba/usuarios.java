@@ -3,6 +3,8 @@ package com.example.prueba;
 public class usuarios {
     String userName, email, urlFoto, token;
 
+    public usuarios() {}
+
     public usuarios(String userName, String email, String urlFoto, String token) {
         this.userName = userName;
         this.email = email;
