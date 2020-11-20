@@ -6,6 +6,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -33,11 +35,27 @@ public class lista_usuarios extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lista_usuarios);
 
+        ltsUsuarios = findViewById(R.id.ltsUsuarios);
         mostrarListadoUsuarios();
+
+        ltsUsuarios.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                try {
+                    Bundle bundle = new Bundle();
+                    bundle.putString("usuario", "Juan Perez");
+                    bundle.putString("to", "12345678");
+
+                    Intent intent = new Intent(getApplicationContext(), chats.class);
+                    intent.putExtras(bundle);
+                    startActivity(intent);
+                }catch (Exception ex){
+                    Toast.makeText(getApplicationContext(), "Error al seleccionar el usuario a chatear: "+ ex.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        });
     }
     private void mostrarListadoUsuarios(){
-        ltsUsuarios = findViewById(R.id.ltsUsuarios);
-
         mDatabaseReference = FirebaseDatabase.getInstance().getReference("usuarios");
         mDatabaseReference.orderByChild("token").equalTo(myFirebaseInstanceIdService.miToken).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
