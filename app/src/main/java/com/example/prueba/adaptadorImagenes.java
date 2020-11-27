@@ -51,7 +51,7 @@ public class adaptadorImagenes extends BaseAdapter {
             textView.setText(user.getUserName());
             Bitmap imageBitmap = BitmapFactory.decodeFile(user.getUrlFoto());
             imageView.setImageBitmap(imageBitmap);
-        }catch (Exception ex){ }
+        }catch (Exception ex){}
         return itemView;
     }
 }
