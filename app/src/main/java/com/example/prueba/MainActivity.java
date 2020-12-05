@@ -21,12 +21,19 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
+import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,8 +44,10 @@ public class MainActivity extends AppCompatActivity {
     ImageView imgFoto;
     Intent takePictureIntent;
     String urlCompletaImg;
+    String urlCompletaImgFirestore;
     DatabaseReference mDatabse;
     MyFirebaseInstanceIdService myFirebaseInstanceIdService = new MyFirebaseInstanceIdService();
+    String miToken;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,35 +57,14 @@ public class MainActivity extends AppCompatActivity {
         imgFoto = findViewById(R.id.imgFoto);
         tomarFoto();
         try {
-            final String miToken = myFirebaseInstanceIdService.miToken;
             mDatabse = FirebaseDatabase.getInstance().getReference("usuarios");
-
+            miToken = myFirebaseInstanceIdService.miToken;
             Button btnGuardarRegistro = findViewById(R.id.btnGuardarRegistro);
             btnGuardarRegistro.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     try {
-                        TextView tempVal = findViewById(R.id.txtNombre);
-                        String nombre = tempVal.getText().toString(),
-                                id = mDatabse.push().getKey();
-                        usuarios user = new usuarios(nombre, "luishernandez@ugb.edu.sv", urlCompletaImg, miToken);
-                        if (id != null) {
-                            mDatabse.child(id).setValue(user).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                @Override
-                                public void onSuccess(Void aVoid) {
-                                    Toast.makeText(getApplicationContext(), "Registro Guardado con exito", Toast.LENGTH_LONG).show();
-                                    Intent intent = new Intent(getApplicationContext(), lista_usuarios.class);
-                                    startActivity(intent);
-                                }
-                            }).addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Toast.makeText(getApplicationContext(), "Erro al intentar crear el registro en la base de datos", Toast.LENGTH_LONG).show();
-                                }
-                            });
-                        } else {
-                            Toast.makeText(getApplicationContext(), "Erro al intentar crear el registro en la base de datos", Toast.LENGTH_LONG).show();
-                        }
+                        subirFileFirestore();
                     } catch (Exception ex) {
                         Toast.makeText(getApplicationContext(), "Erro al intentar guardar el registro: " + ex.getMessage(), Toast.LENGTH_LONG).show();
                     }
@@ -85,6 +73,67 @@ public class MainActivity extends AppCompatActivity {
 
         }catch (Exception ex){
             Toast.makeText(getApplicationContext(), "Erro: "+ ex.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+    private void subirFileFirestore(){
+        Toast.makeText(getApplicationContext(), "Te informaremos cuando la foto se suba a firestoire",Toast.LENGTH_SHORT).show();
+        StorageReference storageRef = FirebaseStorage.getInstance().getReference();
+        Uri file = Uri.fromFile(new File(urlCompletaImg));
+        final StorageReference riversRef = storageRef.child("images/"+file.getLastPathSegment());
+
+        final UploadTask uploadTask = riversRef.putFile(file);
+        uploadTask.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(getApplicationContext(), "Fallo el intento de subir la foto a firestore: "+ e.getMessage(),Toast.LENGTH_LONG).show();
+            }
+        });
+        uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                Toast.makeText(getApplicationContext(), "Listo se subio la foto a firestore",Toast.LENGTH_SHORT).show();
+                Task<Uri> downloadUri = uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+                    @Override
+                    public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                        return riversRef.getDownloadUrl();
+                    }
+                }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Uri> task) {
+                        if(task.isSuccessful()) {
+                            urlCompletaImgFirestore = task.getResult().toString();
+                            guardarDatosFirebase();
+                        }
+                    }
+                });
+            }
+        });
+    }
+    private void guardarDatosFirebase(){
+        try {
+            TextView tempVal = findViewById(R.id.txtNombre);
+            String nombre = tempVal.getText().toString(),
+                    id = mDatabse.push().getKey();
+            usuarios user = new usuarios(nombre, "luishernandez@ugb.edu.sv", urlCompletaImg, urlCompletaImgFirestore, miToken);
+            if (id != null) {
+                mDatabse.child(id).setValue(user).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Toast.makeText(getApplicationContext(), "Registro Guardado con exito", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(getApplicationContext(), lista_usuarios.class);
+                        startActivity(intent);
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(getApplicationContext(), "Erro al intentar crear el registro en la base de datos: "+e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+            } else {
+                Toast.makeText(getApplicationContext(), "Erro al intentar crear el registro en la base de datos", Toast.LENGTH_LONG).show();
+            }
+        }catch (Exception ex){
+
         }
     }
     void tomarFoto(){

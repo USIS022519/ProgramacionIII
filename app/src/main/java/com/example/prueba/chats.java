@@ -1,5 +1,6 @@
 package com.example.prueba;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -8,6 +9,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -20,27 +24,38 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 public class chats extends Activity {
-    String to = "", user = "", from = "", msg="";
+    String to = "", user = "", from = "", msg="", urlFoto="", urlFotoFirestore="";
     DatabaseReference databaseReference;
     private chatsArrayAdapter chatArrayAdapter;
     TextView txtMsg;
     ListView ltsChats;
+    MyFirebaseInstanceIdService myFirebaseInstanceIdService = new MyFirebaseInstanceIdService();
 
     @Override
     protected void onResume() {
@@ -77,6 +92,8 @@ public class chats extends Activity {
                 to = parametros.getString("to");
                 from = parametros.getString("from");
                 user = parametros.getString("user");
+                urlFoto = parametros.getString("urlFoto");
+                urlFotoFirestore = parametros.getString("urlFotoFirestore");
                 tempVal.setText(parametros.getString("user"));
             }
             txtMsg = findViewById(R.id.txtMsg);
@@ -84,6 +101,7 @@ public class chats extends Activity {
                 @Override
                 public boolean onKey(View v, int keyCode, KeyEvent event) {
                     if( event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER ){
+                        guardarMsgFirebase(txtMsg.getText().toString());
                         sendChatMessage(true, txtMsg.getText().toString());
                     }
                     return false;
@@ -99,20 +117,49 @@ public class chats extends Activity {
                 @Override
                 public void onClick(View v) {
                     try {
+                        guardarMsgFirebase(txtMsg.getText().toString());
                         sendChatMessage(false, txtMsg.getText().toString());
                     } catch (Exception ex) {
                         Toast.makeText(getApplicationContext(), "Error al intentar enviar el msg: " + ex.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 }
             });
+            mostrarFoto();
+            historialMsg();
         }catch (Exception ex){
             Toast.makeText(getApplicationContext(), "Error al iniciar el chat: " + ex.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
+    private void mostrarFoto(){
+        ImageView imgFoto = findViewById(R.id.imgFoto);
+        Glide.with(getApplicationContext()).load(urlFotoFirestore).into(imgFoto);
+    }
+    private void historialMsg(){
+        databaseReference = FirebaseDatabase.getInstance().getReference("chats");
+        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                try{
+                    if( snapshot.getChildrenCount()>0 ){
+                        for(DataSnapshot dataSnapshot : snapshot.getChildren()){
+                            if( (dataSnapshot.child("de").getValue().equals(from) && dataSnapshot.child("para").getValue().equals(to)) || (dataSnapshot.child("de").getValue().equals(to) && dataSnapshot.child("para").getValue().equals(from))){
+                                sendChatMessage(dataSnapshot.child("para").getValue().equals(from), dataSnapshot.child("msg").getValue().toString());
+                            }
+                        }
+                    }
+                }catch (Exception ex){
+                    Toast.makeText(getApplicationContext(), "Error al recuperar historial de msgs: "+ ex.getMessage(), Toast.LENGTH_LONG).show();
+                    finish();
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
     public void sendChatMessage(Boolean posicion, String msg){
         try {
-            guardarMsgFirebase(msg);
-
             chatArrayAdapter.add(new chatMessage(posicion, msg));
             txtMsg.setText("");
         }catch (Exception ex){
@@ -121,20 +168,20 @@ public class chats extends Activity {
     }
     private void guardarMsgFirebase(String msg){
         try {
+            JSONObject data = new JSONObject();
+            data.put("para", to);
+            data.put("de", from);
+            data.put("msg", msg);
+            data.put("user", user);
+
             JSONObject notificacion = new JSONObject();
-            notificacion.put("title","Mensaje recibido");
+            notificacion.put("title","Mensaje de "+ user);
             notificacion.put("body",msg);
 
-            JSONObject data = new JSONObject();
-            data.put("msg", msg);
-            data.put("to", to);
-            data.put("from", from);
-            data.put("to_from", to + "_" + from);
-
             JSONObject miData = new JSONObject();
+            miData.put("to", to);
             miData.put("notification", notificacion);
             miData.put("data", data);
-            miData.put("to", to);
 
             enviarDatos objEnviar = new enviarDatos();
             objEnviar.execute(miData.toString());
@@ -166,7 +213,7 @@ public class chats extends Activity {
                 urlConnection.setRequestMethod("POST");
                 urlConnection.setRequestProperty("Content-Type", "application/json");
                 urlConnection.setRequestProperty("Accept", "application/json");
-                urlConnection.setRequestProperty("Authorization", "key=?");
+                urlConnection.setRequestProperty("Authorization", "key=AAAAdtr2Wt0:APA91bElu6u80uT3nPDYTt5Azox2a0ivcVtMgsLZsCLgiSB6jA3c1GWXChY9VzULNCFEgnW6-8pYKwJCGqHPFlttF6xNF2dY1wHepqnDGavzgCcNcskq1XWWgqibYOh4xphXGB1xwckn");
 
                 //set headers and method
                 Writer writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
@@ -186,7 +233,6 @@ public class chats extends Activity {
                 while ((inputLine = reader.readLine()) != null) {
                     buffer.append(inputLine + "\n");
                 }
-                Log.d("FCM",buffer.toString() );
                 if (buffer.length() == 0) {
                     return null;
                 }
@@ -201,7 +247,6 @@ public class chats extends Activity {
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
-            Toast.makeText(getApplicationContext(), "Notificacion: "+ s, Toast.LENGTH_LONG).show();
             try {
                 if( s!=null ) {
                     JSONObject jsonObject = new JSONObject(s);
@@ -221,6 +266,7 @@ public class chats extends Activity {
 
             msg = intent.getStringExtra("msg");
             to = intent.getStringExtra("from");
+            from = intent.getStringExtra("to");
 
             sendChatMessage(true, msg);
             WakeLocker.release();

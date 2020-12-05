@@ -42,11 +42,12 @@ public class lista_usuarios extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 try {
-
                     Bundle bundle = new Bundle();
                     bundle.putString("user", datosJSONArray.getJSONObject(position).getString("user"));
                     bundle.putString("to", datosJSONArray.getJSONObject(position).getString("to"));
                     bundle.putString("from", datosJSONArray.getJSONObject(position).getString("from"));
+                    bundle.putString("urlFoto", datosJSONArray.getJSONObject(position).getString("urlFoto"));
+                    bundle.putString("urlFotoFirestore", datosJSONArray.getJSONObject(position).getString("urlFotoFirestore"));
 
                     Intent intent = new Intent(getApplicationContext(), chats.class);
                     intent.putExtras(bundle);
@@ -91,6 +92,8 @@ public class lista_usuarios extends AppCompatActivity {
                         datosJSONObject.put("user", user.getUserName());
                         datosJSONObject.put("to", user.getToken());
                         datosJSONObject.put("from", myFirebaseInstanceIdService.miToken);
+                        datosJSONObject.put("urlFoto", user.getUrlFoto());
+                        datosJSONObject.put("urlFotoFirestore", user.getUrlFotoFirestore());
                         datosJSONArray.put(datosJSONObject);
                     }
                     adaptadorImagenes adaptadorImg = new adaptadorImagenes(getApplicationContext(), stringArrayList);
