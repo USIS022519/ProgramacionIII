@@ -114,23 +114,30 @@ public class MainActivity extends AppCompatActivity {
             TextView tempVal = findViewById(R.id.txtNombre);
             String nombre = tempVal.getText().toString(),
                     id = mDatabse.push().getKey();
-            usuarios user = new usuarios(nombre, "luishernandez@ugb.edu.sv", urlCompletaImg, urlCompletaImgFirestore, miToken);
-            if (id != null) {
-                mDatabse.child(id).setValue(user).addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Toast.makeText(getApplicationContext(), "Registro Guardado con exito", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(getApplicationContext(), lista_usuarios.class);
-                        startActivity(intent);
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(getApplicationContext(), "Erro al intentar crear el registro en la base de datos: "+e.getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                });
-            } else {
-                Toast.makeText(getApplicationContext(), "Erro al intentar crear el registro en la base de datos", Toast.LENGTH_LONG).show();
+            if( miToken=="" || miToken==null ){
+                miToken = myFirebaseInstanceIdService.miToken;
+            }
+            if( miToken!="" ||  miToken!=null) {
+                usuarios user = new usuarios(nombre, "luishernandez@ugb.edu.sv", urlCompletaImg, urlCompletaImgFirestore, miToken);
+                if (id != null) {
+                    mDatabse.child(id).setValue(user).addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            Toast.makeText(getApplicationContext(), "Registro Guardado con exito", Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(getApplicationContext(), lista_usuarios.class);
+                            startActivity(intent);
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(getApplicationContext(), "Erro al intentar crear el registro en la base de datos: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
+                } else {
+                    Toast.makeText(getApplicationContext(), "Erro al intentar crear el registro en la base de datos", Toast.LENGTH_LONG).show();
+                }
+            }else{
+                Toast.makeText(getApplicationContext(), "No pude obtener el token intentalo mas tarde por favor...", Toast.LENGTH_LONG).show();
             }
         }catch (Exception ex){
 
