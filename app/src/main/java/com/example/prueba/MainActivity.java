@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Editable;
@@ -35,14 +36,20 @@ import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends Activity {
+    BDSQLite miBD;
+    Cursor misAmigos;
+    amigos amigo;
     JSONArray datosJSON;
-    JSONObject jsonObject;
+    JSONObject jsonObject = new JSONObject();
     Integer posicion;
-    ArrayList<String> arrayList =new ArrayList<String>();
-    ArrayList<String> copyStringArrayList = new ArrayList<String>();
-    ArrayAdapter<String> stringArrayAdapter;
+
+    ArrayList<amigos> stringArrayList = new ArrayList<amigos>();
+    ArrayList<amigos> copyStringArrayList = new ArrayList<amigos>();
+    ListView ltsAmigos;
+
     utilidadesComunes uc;
     detectarInternet di;
 
@@ -51,26 +58,93 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        miBD = new BDSQLite(getApplicationContext(), "", null, 1);
+
         di = new detectarInternet(getApplicationContext());
         if( di.hayConexionInternet() ) {
-            conexionServidor objObtenerAmigos = new conexionServidor();
-            objObtenerAmigos.execute(uc.url_consulta, "GET");
+            try {
+                conexionServidor objObtenerAmigos = new conexionServidor();
+                String resp = objObtenerAmigos.execute(uc.url_consulta, "GET").get();
+
+                JSONObject respJSON = new JSONObject(resp);
+                datosJSON = respJSON.getJSONArray("rows");
+                mostrarDatosAmigos();
+            } catch (Exception ex) {
+                Toast.makeText(getApplicationContext(), "Error al obtener datos de amigos del servidor... "+ ex.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+            sincronizar();
         } else {
-            Toast.makeText(getApplicationContext(), "No hay conexion a internet.", Toast.LENGTH_LONG).show();
+            obtenerDatosSQLiteAmigos();
         }
 
         FloatingActionButton btnAgregarNuevoAmigos = findViewById(R.id.btnAgregarAmigos);
         btnAgregarNuevoAmigos.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(di.hayConexionInternet()) {
                     agregarNuevosAmigos("nuevo", jsonObject);
-                } else {
-                    Toast.makeText(getApplicationContext(), "No hay conexion a internet.", Toast.LENGTH_LONG).show();
-                }
             }
         });
         buscarAmigos();
+    }
+    void sincronizar(){
+        misAmigos = miBD.pendienteSincronizar();
+        if (misAmigos.moveToFirst()) {
+            jsonObject = new JSONObject();
+            try {
+                Toast.makeText(getApplicationContext(), "Sincronizando...", Toast.LENGTH_SHORT).show();
+                do {
+                    if( misAmigos.getString(2).length()>1 && misAmigos.getString(3).length()>1 ) {
+                        jsonObject.put("_id", misAmigos.getString(2));
+                        jsonObject.put("_rev", misAmigos.getString(3));
+                    }
+                    jsonObject.put("uniqueID", misAmigos.getString(1));
+                    if( misAmigos.getString(9).equals("no") ) {
+                        jsonObject.put("nombre", misAmigos.getString(4));
+                        jsonObject.put("direccion", misAmigos.getString(5));
+                        jsonObject.put("telefono", misAmigos.getString(6));
+                        jsonObject.put("email", misAmigos.getString(7));
+                        jsonObject.put("url", misAmigos.getString(8));
+                        jsonObject.put("actualizado", "si");
+
+                        enviarDatosAmigo objGuardarAmigo = new enviarDatosAmigo(getApplicationContext());
+                        String resp = objGuardarAmigo.execute(jsonObject.toString()).get();
+                        if (resp != null) {
+                            JSONObject respJSON = new JSONObject(resp);
+                            if (respJSON.getBoolean("ok")) {
+                                jsonObject.put("_id", respJSON.getString("id"));
+                                jsonObject.put("_rev", respJSON.getString("rev"));
+
+                                miBD.mantenimientoAmigos("modificar", jsonObject);
+                                Toast.makeText(getApplicationContext(), "Sincronizacion con exito", Toast.LENGTH_SHORT).show();
+
+                                conexionServidor objObtenerAmigos = new conexionServidor();
+                                resp = objObtenerAmigos.execute(uc.url_consulta, "GET").get();
+
+                                respJSON = new JSONObject(resp);
+                                datosJSON = respJSON.getJSONArray("rows");
+                                mostrarDatosAmigos();
+                            } else {
+                                Toast.makeText(getApplicationContext(), "Error al sincronizar", Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(getApplicationContext(), "No se pudo sincronizar", Toast.LENGTH_SHORT).show();
+                        }
+                    } else if(misAmigos.getString(9).equals("eliminado")){
+                        conexionServidor objEliminarAmigo = new conexionServidor();
+                        String resp = objEliminarAmigo.execute(uc.url_mto + misAmigos.getString(2) + "?rev=" + misAmigos.getString(3), "DELETE").get();
+                        JSONObject respJSON = new JSONObject(resp);
+                        if(respJSON.getBoolean("ok")) {
+                            miBD.mantenimientoAmigos("eliminar", jsonObject);
+                            Toast.makeText(getApplicationContext(), "Sincronizacion con exito", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(getApplicationContext(), "No se pudo sincronizar", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }while (misAmigos.moveToNext());
+            }catch (Exception ex){
+                Toast.makeText(getApplicationContext(), "Error al intentar sincronizar: "+ ex.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }
     }
     void buscarAmigos(){
         final TextView tempVal = (TextView)findViewById(R.id.txtBuscarAmigo);
@@ -81,17 +155,23 @@ public class MainActivity extends Activity {
             }
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                arrayList.clear();
-                if( tempVal.getText().toString().trim().length()<1 ){//no hay texto para buscar
-                    arrayList.addAll(copyStringArrayList);
-                } else{//hacemos la busqueda
-                    for (String amigo : copyStringArrayList){
-                        if(amigo.toLowerCase().contains(tempVal.getText().toString().trim().toLowerCase())){
-                            arrayList.add(amigo);
+                try {
+                    stringArrayList.clear();
+                    if (tempVal.getText().toString().trim().length() < 1) {//no hay texto para buscar
+                        stringArrayList.addAll(copyStringArrayList);
+                    } else {//hacemos la busqueda
+                        for (amigos am : copyStringArrayList) {
+                            String nombre = am.getNombre();
+                            if (nombre.toLowerCase().contains(tempVal.getText().toString().trim().toLowerCase())) {
+                                stringArrayList.add(am);
+                            }
                         }
                     }
+                    adaptadorImagen adaptadorImg = new adaptadorImagen(getApplicationContext(), stringArrayList);
+                    ltsAmigos.setAdapter(adaptadorImg);
+                }catch (Exception ex){
+                    Toast.makeText(getApplicationContext(), "Error: "+ ex.getMessage(), Toast.LENGTH_LONG).show();
                 }
-                stringArrayAdapter.notifyDataSetChanged();
             }
             @Override
             public void afterTextChanged(Editable editable) {
@@ -136,22 +216,71 @@ public class MainActivity extends Activity {
         }
     }
     private void mostrarDatosAmigos(){
-        ListView ltsAmigos = findViewById(R.id.ltsAgendaAmigosCouchDB);
         try {
-            arrayList.clear();
-            stringArrayAdapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, arrayList);
-            ltsAmigos.setAdapter(stringArrayAdapter);
+            if(datosJSON.length()>0) {
+                stringArrayList.clear();
+                ltsAmigos = findViewById(R.id.ltsAgendaAmigosCouchDB);
+                JSONObject datosAmigo;
+                for (int i = 0; i < datosJSON.length(); i++) {
+                    datosAmigo = datosJSON.getJSONObject(i).getJSONObject("value");
+                    amigo = new amigos(
+                            datosAmigo.getString("uniqueID"),
+                            datosAmigo.getString("_id"),
+                            datosAmigo.getString("_rev"),
+                            datosAmigo.getString("nombre"),
+                            datosAmigo.getString("direccion"),
+                            datosAmigo.getString("telefono"),
+                            datosAmigo.getString("email"),
+                            datosAmigo.getString("url"),
+                            datosAmigo.getString("actualizado")
+                    );
+                    stringArrayList.add(amigo);
+                }
+                adaptadorImagen adaptadorImg = new adaptadorImagen(getApplicationContext(), stringArrayList);
+                ltsAmigos.setAdapter(adaptadorImg);
 
-            for (int i = 0; i < datosJSON.length(); i++) {
-                stringArrayAdapter.add(datosJSON.getJSONObject(i).getJSONObject("value").getString("nombre"));
+                copyStringArrayList.clear();//limpiamos la lista de amigos
+                copyStringArrayList.addAll(stringArrayList);//creamos la copia de la lista de amigos...
+                registerForContextMenu(ltsAmigos);
+            }else {
+                agregarNuevosAmigos("nuevo", jsonObject);
             }
-            copyStringArrayList.clear();
-            copyStringArrayList.addAll(arrayList);
-
-            stringArrayAdapter.notifyDataSetChanged();
-            registerForContextMenu(ltsAmigos);
         }catch (Exception ex){
             Toast.makeText(MainActivity.this, "Error al mostrar los datos: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+    private void obtenerDatosSQLiteAmigos(){
+        try {
+
+            misAmigos = miBD.mantenimientoAmigos("consultar", null);
+            if (misAmigos.moveToFirst()) { //hay registro en la BD que mostrar
+                datosJSON =  new JSONArray();
+                JSONObject valueJSON;
+                do {
+                    jsonObject = new JSONObject();
+                    valueJSON = new JSONObject();
+
+                    jsonObject.put("uniqueID", misAmigos.getString(1));
+                    jsonObject.put("_id", misAmigos.getString(2));
+                    jsonObject.put("_rev", misAmigos.getString(3));
+                    jsonObject.put("nombre", misAmigos.getString(4));
+                    jsonObject.put("direccion", misAmigos.getString(5));
+                    jsonObject.put("telefono", misAmigos.getString(6));
+                    jsonObject.put("email", misAmigos.getString(7));
+                    jsonObject.put("url", misAmigos.getString(8));
+                    jsonObject.put("actualizado", misAmigos.getString(9));
+
+                    valueJSON.put("value",jsonObject);
+                    datosJSON.put(valueJSON);
+
+                } while (misAmigos.moveToNext());
+                mostrarDatosAmigos();
+            } else { //No tengo registro que mostrar.
+                Toast.makeText(getApplicationContext(), "No hay registros de amigos que mostrar", Toast.LENGTH_LONG).show();
+                agregarNuevosAmigos("nuevo", jsonObject);
+            }
+        }catch (Exception ex){
+            Toast.makeText(getApplicationContext(), "Error: "+ ex.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
     public void agregarNuevosAmigos(String accion, JSONObject jsonObject){
@@ -176,11 +305,31 @@ public class MainActivity extends Activity {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     try {
-                        conexionServidor objEliminarAmigo = new conexionServidor();
-                        objEliminarAmigo.execute(uc.url_mto +
-                                datosJSON.getJSONObject(posicion).getJSONObject("value").getString("_id") + "?rev=" +
-                                datosJSON.getJSONObject(posicion).getJSONObject("value").getString("_rev"), "DELETE");
+                        JSONObject datosAmigo = new JSONObject();
 
+                        if( di.hayConexionInternet() ) {
+                            datosAmigo.put("uniqueID", datosJSON.getJSONObject(posicion).getJSONObject("value").getString("uniqueID"));
+                            miBD.mantenimientoAmigos("eliminar", datosAmigo);
+
+                            conexionServidor objEliminarAmigo = new conexionServidor();
+                            String resp = objEliminarAmigo.execute(uc.url_mto +
+                                    datosJSON.getJSONObject(posicion).getJSONObject("value").getString("_id") + "?rev=" +
+                                    datosJSON.getJSONObject(posicion).getJSONObject("value").getString("_rev"), "DELETE").get();
+
+                            JSONObject respJSON = new JSONObject(resp);
+                            if(respJSON.getBoolean("ok")) {
+                                datosJSON.remove(posicion);
+                                mostrarDatosAmigos();
+                            } else {
+                                Toast.makeText(getApplicationContext(), "Error al intentar eliminar el amigo" , Toast.LENGTH_LONG).show();
+                            }
+                        } else {
+                            datosJSON.getJSONObject(posicion).getJSONObject("value").put("actualizado","eliminado");
+                            miBD.mantenimientoAmigos("modificar", datosJSON.getJSONObject(posicion).getJSONObject("value"));
+
+                            datosJSON.remove(posicion);
+                            mostrarDatosAmigos();
+                        }
                     }catch (Exception ex){
                         Toast.makeText(getApplicationContext(), "Error al intentar eliminar el amigo: "+ ex.getMessage() , Toast.LENGTH_LONG).show();
                     }
@@ -228,22 +377,6 @@ public class MainActivity extends Activity {
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
-            try {
-                jsonObject = new JSONObject(s);
-                if(jsonObject.isNull("rows")) {
-                    if(jsonObject.getBoolean("ok")){
-                        Toast.makeText(MainActivity.this, "Amigo eliminado con exito", Toast.LENGTH_SHORT).show();
-                        datosJSON.remove(posicion);
-                    } else{
-                        Toast.makeText(MainActivity.this, "Error no se pudo eliminar el registro de amigo", Toast.LENGTH_SHORT).show();
-                    }
-                } else{
-                    datosJSON = jsonObject.getJSONArray("rows");
-                }
-                mostrarDatosAmigos();
-            } catch (Exception ex) {
-                Toast.makeText(MainActivity.this, "Error la parsear los datos: " + ex.getMessage(), Toast.LENGTH_LONG).show();
-            }
         }
     }
 }

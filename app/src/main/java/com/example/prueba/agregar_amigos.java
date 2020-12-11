@@ -2,12 +2,20 @@ package com.example.prueba;
 
 import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,20 +26,33 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class agregar_amigos extends AppCompatActivity {
-    String resp, accion, id, rev;
-    utilidadesComunes uc;
+    String accion, uniqueID, id="", rev="";
+    utilidadesComunes uc = new utilidadesComunes();
+    detectarInternet di;
+    BDSQLite miBD;
+    ImageView imgFotoAmigo;
+    Intent takePictureIntent;
+    String urlCompletaImg;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_agregar_amigos);
+
+        miBD = new BDSQLite(getApplicationContext(),"", null, 1);
+        imgFotoAmigo = findViewById(R.id.imgFotoAmigo);
 
        try {
            FloatingActionButton btnMostrarAmigos = findViewById(R.id.btnMostrarAmigos);
@@ -49,6 +70,7 @@ public class agregar_amigos extends AppCompatActivity {
                }
            });
            mostrarDatosAmigo();
+           tomarFotoAmigo();
        }catch (Exception ex){
            Toast.makeText(getApplicationContext(), "Error al agregar amigos: "+ ex.getMessage(), Toast.LENGTH_LONG).show();
        }
@@ -60,10 +82,7 @@ public class agregar_amigos extends AppCompatActivity {
             if (accion.equals("modificar")){
                 JSONObject dataAmigo = new JSONObject(recibirParametros.getString("dataAmigo")).getJSONObject("value");
 
-                TextView tempVal = (TextView)findViewById(R.id.txtCodigoAmigo);
-                tempVal.setText(dataAmigo.getString("codigo"));
-
-                tempVal = (TextView)findViewById(R.id.txtNombreAmigo);
+                TextView tempVal = (TextView)findViewById(R.id.txtNombreAmigo);
                 tempVal.setText(dataAmigo.getString("nombre"));
 
                 tempVal = (TextView)findViewById(R.id.txtDireccionAmigo);
@@ -72,14 +91,20 @@ public class agregar_amigos extends AppCompatActivity {
                 tempVal = (TextView)findViewById(R.id.txtTelefonoAmigo);
                 tempVal.setText(dataAmigo.getString("telefono"));
 
-                tempVal = (TextView)findViewById(R.id.txtDuiAmigo);
-                tempVal.setText(dataAmigo.getString("dui"));
+                tempVal = (TextView)findViewById(R.id.txtEmailAmigo);
+                tempVal.setText(dataAmigo.getString("email"));
 
                 id = dataAmigo.getString("_id");
                 rev = dataAmigo.getString("_rev");
+                uniqueID = dataAmigo.getString("uniqueID");
+                urlCompletaImg = dataAmigo.getString("url");
+                Bitmap imageBitmap = BitmapFactory.decodeFile(urlCompletaImg);
+                imgFotoAmigo.setImageBitmap(imageBitmap);
+            } else {
+                uniqueID = uc.generateUniqueId();
             }
         }catch (Exception ex){
-            ///
+            Toast.makeText(getApplicationContext(),"Error al mostrar datos: "+ ex.getMessage() , Toast.LENGTH_LONG).show();
         }
     }
     private void mostrarAmigos(){
@@ -87,10 +112,7 @@ public class agregar_amigos extends AppCompatActivity {
         startActivity(mostrarAmigos);
     }
     private void guardarAmigo(){
-        TextView tempVal = findViewById(R.id.txtCodigoAmigo);
-        String codigo = tempVal.getText().toString();
-
-        tempVal = findViewById(R.id.txtNombreAmigo);
+        TextView tempVal = findViewById(R.id.txtNombreAmigo);
         String nombre = tempVal.getText().toString();
 
         tempVal = findViewById(R.id.txtDireccionAmigo);
@@ -99,85 +121,104 @@ public class agregar_amigos extends AppCompatActivity {
         tempVal = findViewById(R.id.txtTelefonoAmigo);
         String telefono = tempVal.getText().toString();
 
-        tempVal = findViewById(R.id.txtDuiAmigo);
-        String dui = tempVal.getText().toString();
+        tempVal = findViewById(R.id.txtEmailAmigo);
+        String email = tempVal.getText().toString();
 
         try {
             JSONObject datosAmigo = new JSONObject();
-            if (accion.equals("modificar")){
+            if (accion.equals("modificar") && id.length()>1 && rev.length()>1){
                 datosAmigo.put("_id",id);
                 datosAmigo.put("_rev",rev);
             }
-            datosAmigo.put("codigo", codigo);
+            datosAmigo.put("uniqueID", uniqueID);
             datosAmigo.put("nombre", nombre);
             datosAmigo.put("direccion", direccion);
             datosAmigo.put("telefono", telefono);
-            datosAmigo.put("dui", dui);
+            datosAmigo.put("email", email);
+            datosAmigo.put("url", urlCompletaImg);
+            datosAmigo.put("actualizado", "si");
 
-            enviarDatosAmigo objGuardarAmigo = new enviarDatosAmigo();
-            objGuardarAmigo.execute(datosAmigo.toString());
+            di = new detectarInternet(getApplicationContext());
+            if( di.hayConexionInternet() ) {
+                enviarDatosAmigo objGuardarAmigo = new enviarDatosAmigo(getApplicationContext());
+                String resp = objGuardarAmigo.execute(datosAmigo.toString()).get();
+                try{
+                    JSONObject respJSON = new JSONObject(resp);
+                    if(respJSON.getBoolean("ok")){
+                        datosAmigo.put("_id",respJSON.getString("id"));
+                        datosAmigo.put("_rev",respJSON.getString("rev"));
+                        miBD.mantenimientoAmigos(accion, datosAmigo);
+                        Toast.makeText(getApplicationContext(), "Datos de amigo guardado con exito ", Toast.LENGTH_SHORT).show();
+                        mostrarAmigos();
+                    } else {
+                        Toast.makeText(getApplicationContext(), "Error al intentar guardar datos de amigo", Toast.LENGTH_SHORT).show();
+                    }
+                }catch (Exception e){
+                    Toast.makeText(getApplicationContext(), "Error al guardar amigo: "+e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            } else {
+                datosAmigo.put("_id",id);
+                datosAmigo.put("_rev",rev);
+                datosAmigo.put("actualizado", "no");
+                miBD.mantenimientoAmigos(accion, datosAmigo);
+            }
+            if(!di.hayConexionInternet()){
+                mostrarAmigos();
+            }
         }catch (Exception ex){
             Toast.makeText(getApplicationContext(), "Error: "+ ex.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
-    private class enviarDatosAmigo extends AsyncTask<String,String, String>{
-        HttpURLConnection urlConnection;
-        @Override
-        protected String doInBackground(String... parametros) {
-            StringBuilder stringBuilder = new StringBuilder();
-            String jsonResponse = null;
-            String jsonDatos = parametros[0];
-            BufferedReader reader;
-            try {
-                URL url = new URL(uc.url_mto);
-                urlConnection = (HttpURLConnection)url.openConnection();
-                urlConnection.setDoInput(true);
-                urlConnection.setDoOutput(true);
-
-                urlConnection.setRequestMethod("POST");
-                urlConnection.setRequestProperty("Content-Type","application/json");
-                urlConnection.setRequestProperty("Accept","application/json");
-
-                Writer writer = new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream(), "UTF-8"));
-                writer.write(jsonDatos);
-                writer.close();
-
-                InputStream inputStream = urlConnection.getInputStream();
-                if(inputStream==null){
-                    return null;
+    void tomarFotoAmigo(){
+        imgFotoAmigo.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                    //guardando la imagen
+                    File photoFile = null;
+                    try {
+                        photoFile = createImageFile();
+                    }catch (Exception ex){}
+                    if (photoFile != null) {
+                        try {
+                            Uri photoURI = FileProvider.getUriForFile(agregar_amigos.this, "com.example.prueba.fileprovider", photoFile);
+                            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                            startActivityForResult(takePictureIntent, 1);
+                        }catch (Exception ex){
+                            Toast.makeText(getApplicationContext(), "Error Toma Foto: "+ ex.getMessage(),Toast.LENGTH_LONG).show();
+                        }
+                    }
                 }
-                reader = new BufferedReader(new InputStreamReader(inputStream));
-                resp = reader.toString();
-
-                String inputLine;
-                StringBuffer stringBuffer = new StringBuffer();
-                while ((inputLine=reader.readLine())!= null){
-                    stringBuffer.append(inputLine+"\n");
-                }
-                if(stringBuffer.length()==0){
-                    return null;
-                }
-                jsonResponse = stringBuffer.toString();
-                return jsonResponse;
-            }catch (Exception ex){
-                //
             }
-            return null;
-        }
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-            try{
-                JSONObject jsonObject = new JSONObject(s);
-                if(jsonObject.getBoolean("ok")){
-                    Toast.makeText(getApplicationContext(), "Datos de amigo guardado con exito", Toast.LENGTH_SHORT).show();
-                    mostrarAmigos();
-                } else {
-                    Toast.makeText(getApplicationContext(), "Error al intentar guardar datos de amigo", Toast.LENGTH_SHORT).show();
-                }
-            }catch (Exception e){
-                Toast.makeText(getApplicationContext(), "Error al guardar amigo: "+e.getMessage(), Toast.LENGTH_LONG).show();
+        });
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        try {
+            if (requestCode == 1 && resultCode == RESULT_OK) {
+                Bitmap imageBitmap = BitmapFactory.decodeFile(urlCompletaImg);
+                imgFotoAmigo.setImageBitmap(imageBitmap);
             }
+        }catch (Exception ex){
+            Toast.makeText(getApplicationContext(), "Error: "+ ex.getMessage(), Toast.LENGTH_LONG).show();
         }
+    }
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "imagen_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        if( storageDir.exists()==false ){
+            storageDir.mkdirs();
+        }
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+        urlCompletaImg = image.getAbsolutePath();
+        return image;
     }
 }

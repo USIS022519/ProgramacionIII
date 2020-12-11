@@ -7,42 +7,63 @@
     tools:context=".agregar_amigos"
     android:layout_margin="10dp">
 
-    <EditText
-        android:id="@+id/txtCodigoAmigo"
-        android:layout_marginTop="60dp"
-        android:layout_width="match_parent"
-        android:hint="CODIGO"
-        android:layout_height="wrap_content"/>
+    <androidx.cardview.widget.CardView
+        android:id="@+id/crvFoto"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginTop="20dp"
+        android:layout_centerHorizontal="true"
+        app:cardCornerRadius="150dp">
+
+        <ImageView
+            android:id="@+id/imgFotoAmigo"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:cropToPadding="false"
+            android:scaleType="centerCrop"
+            android:background="@drawable/camera" />
+
+    </androidx.cardview.widget.CardView>
+
     <EditText
         android:id="@+id/txtNombreAmigo"
-        android:layout_marginTop="120dp"
         android:layout_width="match_parent"
-        android:hint="NOMBRE"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/crvFoto"
+        android:layout_marginTop="40dp"
+        android:hint="NOMBRE" />
+
     <EditText
         android:id="@+id/txtDireccionAmigo"
-        android:layout_marginTop="180dp"
         android:layout_width="match_parent"
-        android:hint="DIRECCION"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txtNombreAmigo"
+        android:layout_marginTop="15dp"
+        android:hint="DIRECCION" />
+
     <EditText
         android:id="@+id/txtTelefonoAmigo"
-        android:layout_marginTop="240dp"
         android:layout_width="match_parent"
-        android:hint="TELEFONO"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txtDireccionAmigo"
+        android:layout_marginTop="15dp"
+        android:hint="TELEFONO" />
+
     <EditText
-        android:id="@+id/txtDuiAmigo"
-        android:layout_marginTop="300dp"
+        android:id="@+id/txtEmailAmigo"
         android:layout_width="match_parent"
-        android:hint="DUI"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/txtTelefonoAmigo"
+        android:layout_marginTop="15dp"
+        android:hint="EMAIL" />
+
     <Button
         android:id="@+id/btnGuardarAmigos"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="360dp"
-        android:text="Guardar"/>
+        android:layout_below="@+id/txtEmailAmigo"
+        android:layout_marginTop="15dp"
+        android:text="Guardar" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnMostrarAmigos"
